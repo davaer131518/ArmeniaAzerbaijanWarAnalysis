@@ -1,0 +1,278 @@
+---
+title: "Azerbaijan-Armenia Dispute Analysis"
+author: "David Martirosyan"
+date: "10/30/2020"
+output: 
+  pdf_document:
+    toc: true
+    fig_caption: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = F, message = F)
+```
+
+\newpage    
+
+## Overview
+
+Armenia and Azerbaijan have an ongoing history of war, aggression and general dispute over the Nagorno-Karabakh region for over thirty years. It is key to evaluate the methods of aggression used, whether it be aerial, heavy weaponry or small arms and the proportion of each in relation to the others in order to understand possible countermeasures needed for future conflicts. In light of recent events, it became evident that the lack of anti-air systems was a major problem for the Armenian army and naturally, as time goes on technology advances, hence understanding the categories of weaponry being used currently is also key. In addition, it is also important to see trends which may spark aggression between Armenia and Azerbaijan. Using actual data, I will visualize the above mentioned for a better understanding. I find it noteworthy to mention that the Azerbaijani government has often not only suppressed local media, but also bribed other news stations to spread misinformation, hence there may be a degree of bias within the data. We should take this information into account for the below visualizations.
+
+
+
+## Research methodology
+
+The data was extracted from GDELT's Event database. The GDELT Event Database is a global catalog of worldwide activities (“events”) in over 300 categories from protests and military attacks to peace appeals and diplomatic exchanges. In addition to writing automated downloading code (for relevant csv files), data cleaning was also involved in order to get the relevant final format of the csv file. The latter was done using Python, as I personally find Python more convenient for data extraction, and manipulation. The main tool used for data analysis was R as I believe the latter is both superior and more convenient for data visualization purposes.
+
+
+## Literature review
+
+I was inspired to choose this topic because of two main reasons. Firstly, the two most recent wars between Armenia and Azerbaijan (July 12 - July 16, September 27 - November 10) raised the question of what the main flaws on the Armenian side were during the war. I wanted to understand what areas the Armenian side could have improved for a more beneficial outcome. Furthermore, I also wanted to understand whether or not there are other reasons apart from the disputed land of Nagorno-Karabagh that compelled the Azerbaijani side to initiate war. Secondly, I was inspired by an article written by Vahan Martirosyan who, in his article, provides detailed visualizations to support his hypothesis that drops in oil prices have a direct correlation with Azerbaijan - Armenia aggression and war initiations (Martirosyan, 2020). I can take on a different path from the latter by providing insight on the different types of weaponry used throughout time and the volume of each. 
+\   
+
+After WW2, after many technological breakthroughs, many countries started competing to produce the state of the art weaponry. Nowadays, during modern warfare, we can see that mainly Man-Portable air-defense systems (MANPDs), Unmanned Aerial Vehicles (UAVs, including missle-laden UAV's) and Armed Drones are being used, the latter coming to prominence only within the past two decades (Globalization 101). In addition, modern artillery, tanks and military aircrafts are also being heavily used during modern warfare (worldwar1centennial). Hence, it is obvious that mainly heavy artillery and aerial weaponry, more specifically, weaponry that are not controlled by man, but rather AI, are being used during modern times. So, I would like to visualize this using global media data in order to reinforce my claims. 
+
+
+## Hypotheses
+
+In order to have a general understanding about the ongoing dispute between Azerbaijan and Armenia, I will use available data to create informative visualizations as well as do some analysis that will help understand the background of the resulting visualizations. 
+Using data acquired from a publicly available source (GDELT Databases), I will describe the different types of weaponry being used during the time span of this ongoing conflict, in order to understand what types of weaponry is being used more during modern times compared to the those being used during the war in the 1990's, and possibly understand what areas can be improved in the Armenian military in order to achieve a stronger, well-rounded military. Furthermore, I will try to understand what other factors possibly impact "general aggression" by providing time series visualizations for variables such as "general aggression", "political uneasiness" and "foreign affairs". Initially, I believe that during the 90's war mainly small arms and possibly heavy artillery (tanks, rpgs, etc.) was being used, whereas during the recent wars mainly aerial weaponry and heavy artillery has been used. In addition, I believe that during the 90's war both sides were more keen on solving the dispute via negotiations, whereas recently, war was preferred (especially by the Azerbaijani side) to resolve the conflict. Hence, spikes in "general aggression" will affect "political uneasiness", and rising levels of "political uneasiness" will affect "foreign affairs" levels.
+
+
+\   
+
+
+
+## Analysis
+
+\   
+
+```{r}
+library(ggplot2)
+library(car)
+library(lubridate)
+library(dplyr)
+library(hrbrthemes)
+library(gridExtra)
+library(cowplot)
+library(readxl)
+library(reticulate)
+library(scales)
+library(ggcorrplot)
+Sys.setenv(RETICULATE_PYTHON = "C:\\ProgramData\\Anaconda3\\python.exe")
+pd <- import("pandas")
+
+
+event_df <- read_excel("event_df.xlsx")
+```
+
+
+```{r}
+# Format
+event_df[is.na(event_df)] <- 0
+event_df$...1 <- as.Date(event_df$...1, '%Y/%m/%d')
+event_df <- event_df %>% rename(`Date` = `...1`)
+event_df <- subset(event_df, format(as.Date(`Date`),"%Y")>1991)
+
+# Add columns 
+event_df$`General Aggression` <- rowSums(event_df[,c('accuse of aggression', 'accuse of war crimes', 'appeal for military aid', 'appeal for military cooperation', 'appeal for military protection or peacekeeping', 'appeal to others to settle dispute', 'carry out suicide bombing', 'carry out vehicular bombing', 'deny responsibility', 'destroy property', 'employ aerial weapons', 'engage in ethnic cleansing', 'engage in mass expulsion', 'engage in mass killings', 'engage in negotiation', 'investigate military action', 'investigate war crimes', 'kill by physical assault', 'mobilize or increase armed forces', 'mobilize or increase police power', 'occupy territory', 'protest violently riot', 'reduce or stop military assistance', 'retreat or surrender militarily', 'threaten occupation', 'threaten with military force', 'torture', 'use conventional military force', 'violate ceasefire', 'declare truce ceasefire', 'fight with artillery and tanks')], na.rm=TRUE)
+
+event_df$`Heavy Weaponary` <- rowSums(event_df[,c('fight with artillery and tanks', 'employ aerial weapons')], na.rm=TRUE)
+
+event_df$`Political Uneasiness` <- rowSums(event_df[,c('ban political parties or politicians', 'complain officially', 'conduct hunger strike', 'conduct strike or boycott', 'demand change in institutions regime', 'demand change in leadership', 'demonstrate for leadership change', 'demand rights', 'protest violently riot', 'impose blockade restrict movement', 'impose administrative sanctions', 'impose curfew', 'mobilize or increase police power', 'increase police alert status', 'impose blockade restrict movement', 'demonstrate or rally', 'appeal for political reform', 'arrest detain or charge with legal action', 'defy norms law', 'threaten with political dissent protest', 'demonstrate for policy change', 'engage in political dissent', 'accuse of crime corruption')], na.rm=TRUE)
+
+
+event_df$`Foreign Affairs` <- rowSums(event_df[,c('acknowledge or claim responsibility', 'allow humanitarian access', 'allow international involvement', 'apologize', 'appeal for diplomatic cooperation (such as policy support)', 'appeal to others to settle dispute', 'appeal to others to meet or negotiate', 'demand diplomatic cooperation (such as policy support)', 'engage in negotiation', 'express intent to cooperate', 'express intent to engage in diplomatic cooperation (such as policy support)', 'express intent to meet or negotiate', 'express intent to release persons or property',  'express intent to settle dispute', 'demand meeting negotiation', 'discuss by telephone', 'sign formal agreement', 'engage in diplomatic cooperation')], na.rm=TRUE)
+
+
+# Remove to not get redundancies
+df_removed = subset(event_df, select = -c(`accuse of aggression`, `accuse of war crimes`, `appeal for military aid`, `appeal for military cooperation`, `appeal for military protection or peacekeeping`, `appeal to others to settle dispute`, `carry out suicide bombing`, `carry out vehicular bombing`, `deny responsibility`, `destroy property`, `employ aerial weapons`, `engage in ethnic cleansing`, `engage in mass expulsion`, `engage in mass killings`, `engage in negotiation`, `investigate military action`, `investigate war crimes`, `kill by physical assault`, `mobilize or increase armed forces`, `mobilize or increase police power`, `occupy territory`, `protest violently riot`, `reduce or stop military assistance`, `retreat or surrender militarily`, `threaten occupation`, `threaten with military force`, `torture`, `use conventional military force`, `violate ceasefire`, `declare truce ceasefire`, `appeal for easing of administrative sanctions`, `Date`, `fight with artillery and tanks`, `ban political parties or politicians`, `complain officially`, `conduct hunger strike`, `conduct strike or boycott`, `demand change in institutions regime`, `demand change in leadership`, `demonstrate for leadership change`, `demand rights`, `impose administrative sanctions`, `impose curfew`, `mobilize or increase police power`, `increase police alert status`, `impose blockade restrict movement`, `demonstrate or rally`, `appeal for political reform`, `arrest detain or charge with legal action`, `defy norms law`, `threaten with political dissent protest`, `demonstrate for policy change`, `engage in political dissent`, `accuse of crime corruption`, `acknowledge or claim responsibility`, `allow humanitarian access`, `allow international involvement`, `apologize`, `appeal for diplomatic cooperation (such as policy support)`, `appeal to others to settle dispute`, `appeal to others to meet or negotiate`, `demand diplomatic cooperation (such as policy support)`, `engage in negotiation`, `express intent to cooperate`, `express intent to engage in diplomatic cooperation (such as policy support)`, `express intent to meet or negotiate`, `express intent to release persons or property`,  `express intent to settle dispute`, `demand meeting negotiation`, `discuss by telephone`, `sign formal agreement`, `engage in diplomatic cooperation`))
+
+# Calculate rowsums to get percentage dataframe
+event_df$total <- rowSums(df_removed)
+
+
+percentages <- event_df
+
+# Get percentage dataframe
+for (column.name in names(percentages) [3:ncol(percentages)-1]) {
+  percentages[column.name] = percentages[column.name] / percentages$total
+}
+
+# Use python to resample (resample function)
+percentages <- r_to_py(percentages)
+percentages = percentages$set_index(pd$DatetimeIndex(percentages['Date']))
+percentages_month = percentages$resample('M')$agg('mean')
+percentages_month <- py_to_r(percentages_month)
+
+# Format new dataframe
+percentages_month <- cbind(Date = rownames(percentages_month), percentages_month)
+rownames(percentages_month) <- 1:nrow(percentages_month)
+percentages_month$Date <- as.Date(percentages_month$Date)
+
+View(percentages_month)
+```
+
+```{r, fig.width=10, fig.height=6, fig.cap = 'General Aggression Throughout Time'}
+
+ggplot(percentages_month, aes(x = Date, y = `General Aggression`)) + geom_line(color="#69b3a2")  + scale_x_date(date_breaks = "1 year", labels = date_format("%Y")) + theme_bw() + theme(axis.ticks = element_blank(), axis.text.y = element_blank(), axis.text.x = element_text(angle = 90), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + xlab('Year')
+
+```
+
+\   
+
+In Figure 1, a plot visualizing "General Aggression" between Azerbaijan and Armenia can be observed. The variable "General Aggression" does not only incorporate literal military warfare variables, but also political aggression (blaming, threatening, etc). It is clearly visible that there are extreme spikes during the 1990's, as there was a long term war going on, after which the level of "General Aggression" decreased up until around 2016 when there was a four-day-war, known as the April War, and towards the end we see yet again extreme spikes due to the two wars that took place in 2020 (July 12 - July 16, September 27 - November 10). Also, we can see that tension levels keep fluctuating throughout the time span as there are spikes and drops in the graph even when aggression levels are not very high.
+
+
+
+\newpage
+
+```{r, fig.width=10, fig.height=7, fig.cap = 'Different Weaponary Usage Throughout Time'}
+
+heavy <- ggplot(percentages_month, aes(x = `Date`, y = `fight with artillery and tanks`)) +
+  geom_line(color = 'red') + scale_x_date(date_breaks = "1 year", labels = date_format("%Y")) + ylab('Heavy Artillery') + xlab('') + theme_bw() + theme(axis.ticks = element_blank(), axis.text.y = element_blank(), axis.text.x = element_text(angle = 90), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+light <- ggplot(percentages_month, aes(x = `Date`, y = `fight with small arms and light weapons`)) + geom_line(color = 'blue') + scale_x_date(date_breaks = "1 year", labels = date_format("%Y")) + ylab('Small Arms') + xlab('') + theme_bw() + theme(axis.ticks = element_blank(), axis.text.y = element_blank(), axis.text.x = element_text(angle = 90), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+aerial <- ggplot(percentages_month, aes(x = `Date`, y = `Heavy Weaponary`)) + geom_line(color = 'orange') + scale_x_date(date_breaks = "1 year", labels = date_format("%Y")) + ylab('Aerial') + xlab('Year') + theme_bw() + theme(axis.ticks = element_blank(), axis.text.y = element_blank(), axis.text.x = element_text(angle = 90), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+plot_grid(heavy, light, aerial, align = 'v', nrow = 3)
+
+```
+
+\   
+
+In Figure 2, exists a plot consisting of three parts: heavy artillery, small arms and aerial weaponry. Heavy artillery consists of artillery and tanks usage, small arms consists of light weaponry and other small arms, and aerial weaponry consists of drones, heavy artillery and other aerial weaponry. First, I would like to inspect each plot separately. In the first ploy (Heavy Artillery) it es evident that the scale at which heavy weaponry has being used during current times is much larger than during the 90's war and even the April War. There may be multiple reasons behind this: usage of obsolete weaponry, weaker military, older technology, etc. In the second plot (Small Arms), we can observe a plot with generally more spikes when compared to the other two. This is because light weaponry and small arms are much more common and less expensive when compared to artillery, heavy artillery, drones, tanks etc. Also, we can observe that compared to the 90's and 2016, the scale of small arms usage is substantially less, which supports my initial hypothesis that during the recent wars small arms usage is less common, with heavy artillery and drones being used on a larger scale. Also, there have been many cases when Azerbaijani snipers have killed civilians and Armenian soldiers on the borders during times when there was no war, which explains the "spikiness" of the periods during which there was no war. In the third and last plot (Aerial Weaponry), we can see that there are extreme spikes during the 90's, 2020, and smaller spikes in 2016, 2008 (2008 Mardakert clashes) and 2014 (23 reported casualties and more injuries). Unfortunately the given data set does not contain a separate column "drone attacks", hence I cannot separate drones from the aerial attacks column (which also contains heavy artillery) in order to show that the usage of drones in 2020 are much more compared to the 90's. Nevertheless, we can see that except for the year 1992 the usage of aerial weapons is much more in 2020 compared to the 90's (with exception of the year 1992), 2008, 2014 and 2016. To sum up, Figure 2 illustrates and supports my initial hypothesis that aerial weaponry has been used much more heavily during recent conflicts, indicating that the Armenian military should invest heavily in anti-air defense systems for potential future clashes.
+
+
+
+\newpage
+
+
+```{r, fig.width=13, fig.height=6, fig.cap = 'Total Political Uneasiness & Foreign Affairs'}
+
+uneaseiness <- ggplot(percentages_month, aes(x = Date, y = `Political Uneasiness`)) + geom_line(color = 'red') + theme_bw() + scale_x_date(date_breaks = "2 year", labels = date_format("%Y")) + theme(axis.ticks = element_blank(), axis.text.y = element_blank(), axis.text.x = element_text(angle = 90), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+foreign <- ggplot(percentages_month, aes(x = Date, y = `Foreign Affairs`)) + geom_line(color = 'blue') + theme_bw() + scale_x_date(date_breaks = "2 year", labels = date_format("%Y")) + theme(axis.ticks = element_blank(), axis.text.y = element_blank(), axis.text.x = element_text(angle = 90), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+plot_grid(uneaseiness, foreign, align = 'h', nrow = 1)
+```
+
+\   
+
+In Figure 3 two plots are observed: "Political Uneasiness", showing local political tensions, and "Foreign Affairs", showing the activity of foreign affairs between Azerbaijan and Armenia. Hereby I wanted to give a general understanding of the previously mentioned variables throughout time. An interesting observation is that as political tensions were extraordinarily high during the 90's (most likely because of war), foreign affair levels were also high, however, afterwards, foreign affair levels steadily dropped, and to very low levels during recent times. This may indicate that during the 90's war both sides were more willing to come to terms with one another, whereas during recent events they were reluctant to resolve the dispute by negotiation. The latter may be more evident in Figure 4.
+
+\newpage    
+
+```{r}
+# Normalize two columns to get same scale for comparison reasons
+
+df_normed <- percentages_month
+df_normed <- df_normed %>% mutate_at(c("Political Uneasiness", "General Aggression", 'Foreign Affairs'), ~(scale(.) %>% as.vector))
+
+```
+
+```{r, fig.width=13, fig.height=8, fig.cap= 'Relationship Between Different Variables (2001-2020)'}
+
+line_plt1 <- df_normed %>% filter(format(as.Date(`Date`),"%Y")>2000) %>%
+  ggplot() + geom_line(aes(x = Date, y = `Political Uneasiness`, color = 'Political Uneasiness')) +
+  geom_line(aes(x = Date, y = `General Aggression`, color = 'General Aggression')) + ylab('Frequency') +
+  scale_color_manual(values = c("General Aggression" = 'red', "Political Uneasiness" = 'blue')) + theme_bw() + scale_x_date(date_breaks = "3 year", labels = date_format("%Y")) +
+  theme(axis.ticks = element_blank(), axis.text.y = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = c(0.75, 0.86), legend.title = element_blank())
+
+line_plt2 <- df_normed %>% filter(format(as.Date(`Date`),"%Y")>2000) %>%
+  ggplot() + geom_line(aes(x = Date, y = `Political Uneasiness`, color = 'Political Uneasiness')) +
+  geom_line(aes(x = Date, y = `Foreign Affairs`, color = 'Foreign Affairs')) + ylab('Frequency') +
+  scale_color_manual(values = c("Political Uneasiness" = 'blue', "Foreign Affairs" = 'orange')) + theme_bw() + scale_x_date(date_breaks = "3 year", labels = date_format("%Y")) +
+  theme(axis.ticks = element_blank(), axis.text.y = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = c(0.75, 0.86), legend.title = element_blank())
+
+line_plt3 <- df_normed %>% filter(format(as.Date(`Date`),"%Y")>2000) %>%
+  ggplot() + geom_line(aes(x = Date, y = `Foreign Affairs`, color = 'Foreign Affairs')) +
+  geom_line(aes(x = Date, y = `General Aggression`, color = 'General Aggression')) + ylab('Frequency') +
+  scale_color_manual(values = c("Foreign Affairs" = 'orange', "General Aggression" = 'red')) + theme_bw() + scale_x_date(date_breaks = "3 year", labels = date_format("%Y")) +
+  theme(axis.ticks = element_blank(), axis.text.y = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = c(0.75, 0.86), legend.title = element_blank())
+
+line_plt4 <- df_normed %>% filter(format(as.Date(`Date`),"%Y")>2000) %>%
+  ggplot() + geom_line(aes(x = Date, y = `Foreign Affairs`, color = 'Foreign Affairs')) +
+  geom_line(aes(x = Date, y = `Political Uneasiness`, color = 'Political Uneasiness')) +
+  geom_line(aes(x = Date, y = `General Aggression`, color = 'General Aggression')) +
+  ylab('Frequency') +
+  scale_color_manual(values = c("Foreign Affairs" = 'orange', 'Political Uneasiness' = 'blue', 'General Aggression' = 'red')) + theme_bw() + scale_x_date(date_breaks = "3 year", labels = date_format("%Y")) +
+  theme(axis.ticks = element_blank(), axis.text.y = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = c(0.75, 0.80), legend.title = element_blank())
+
+plot_grid(line_plt1, line_plt2, line_plt3, line_plt4 , align = 'v', nrow = 2)
+```
+
+\   
+
+In Figure 4 we can see four plots, each showing relationships between different variables. In order to compare the variables in the same plot, I normalized the relevant columns in the data in order to get numbers that are on the same scale. For the first plot, we can see that "General Aggression" and "Political Uneasiness" are almost mirror opposites during most of the time span, indicating that as "General Aggression" levels drop political tensions increase. This becomes especially visible at the time slot of 2020, where we can see general aggression at very high levels, with political tensions low, which supports my above mentioned claim that war was preferred over negotiations to resolve the ongoing dispute between the two countries during the recent war. The second plot shows the relationship between "Foreign Affairs" and "Political Uneasiness". Here there is an even better "mirroring" effect than there was in the previous plot. During most of the time span, excluding the 90's, we can see "Foreign Affairs" activity levels decrease as political tensions increase (and when political tensions decrease, "Foreign Affair" levels increase). From around 2009 - 2012 we can observe that "Foreign Affairs" levels are high and political tensions low, which shows a time of relative peace between the two countries. This is also further supported by the fourth plot where we can see "General Aggression" levels relatively low and stable for the same time period. With the third plot we see a rather natural trend: As "Foreign Affairs" levels are high, "General Aggression" is low, and as stated above, during 2020, "General Aggression" levels were very high as there was war, yet "Foreign Affairs" levels are low, indicating very low levels of negotiations between the two countries. With the fourth plot we can see all three variable together for a better understanding of interactions between each. Hence, what we can take from Figure 4 is that "Political Uneasiness" affects "General Aggression" and that during 2020 negotiations were low indicating that war was preferred over negotiations.
+
+\newpage
+
+```{r, fig.width=10, fig.height=5, fig.cap= 'Scatterplot Relationship for Given Variables'}
+
+polVSfor <- ggplot(df_normed, aes(x = `Political Uneasiness`, y = `Foreign Affairs`)) + geom_point(color = 'red', alpha = 0.6) + geom_smooth(method = 'lm') + theme_bw()
+
+genVSfor <- ggplot(df_normed, aes(x = `General Aggression`, y = `Foreign Affairs`)) + geom_point(color = 'blue', alpha = 0.6) + geom_smooth(method = 'lm', color = 'red') + theme_bw()
+
+
+plot_grid(polVSfor, genVSfor, align = 'h', nrow = 1)
+
+```
+
+\   
+
+In Figure 5 two scatter plots better showing part of the relationships in Figure 4 are visualized. In the first scatter plot we can see a negative correlation between "Foreign Affairs" and "Political Uneasiness", as explained above. Similarly, in the second scatter plot we can observe a negative correlation between "Foreign Affairs" and "General Aggression" as explained above. Hence, as political tensions increase, 'Foreign Affairs" levels decrease and, likewise, as aggression levels increase, "Foreign Affairs" levels decrease.
+
+
+
+\newpage
+
+
+```{r, fig.width=8, fig.height=8, fig.cap= 'Correlation Heatmap'}
+
+heatmap_df <- df_normed
+heatmap_df = subset(heatmap_df, select = c(`General Aggression`, `Political Uneasiness`, `Foreign Affairs`))
+cormat <- round(cor(heatmap_df),2)
+
+heatmap <- ggcorrplot(cormat,
+           hc.order = TRUE,
+           type = 'lower',
+           outline.color = "black",
+           lab = TRUE)
+
+
+heatmap
+```
+
+\   
+
+In Figure 6 a correlation heatmap of the given variables are visualized. Using this visualization we can see the exact correlation between relevant variables. This visualization further shows the negative correlations explained above.
+
+
+
+\newpage
+
+## Conclusion and Recommendations
+
+Initially my hypothesis was that during the beginning of the Nogorno-Karabagh dispute mainly small arms and possibly some artillery was being used in contrast to recent times, where the usage of aerial weaponry and heavy artillery largely out-scaled that of small arms. Figure 2 clearly reinforces this and provides detailed insights on the different types of weaponry used during the timespan of the dispute. Furthermore, I was also able to show via visualization that there are correlations between political tensions and general aggression. We can see from Figure 4 that as general aggression increases, political tensions decrease.
+
+As Armenia and Azerbaijan have a long term history of war and dispute, future wars and clashes are not out of the question. Hence, Armenia should improve its military and, what is more, anti-air defense systems should be heavily invested in as the trend shows that aerial weaponry was the main arms used during the two most recent wars. Also, efforts must be made to modernize current weaponry, in order to be able to keep enemy countries at bay. Since mainly aerial weaponry was being used during the recent wars, it becomes clear that long rage weaponry (heavy artillery, drones, etc.) must also be invested in for modern warfare.
+
+
+## References
+\   
+
+Martirosyan, V., V.M. (2020). Azerbaijan and Diversionary War Theory Quantitative Analysis (Tech.).
+
+\   
+
+Weapons of Modern Warfare. (n.d.). Retrieved December 08, 2020, from https://www.worldwar1centennial.org/index.php/edu-home/edu-topics/582-trench-warfare/5051-weapons-of-modern-warfare.html
+
+\   
+
+Modern Warfare. (n.d.). Retrieved December 08, 2020, from https://www.globalization101.org/modern-warfare/?fbclid=IwAR2FCtLkQgFlB4z9Of4OlCA-DrVWKpEx1ezXhMpRX5YBSByq7ubjOqoAPis
+
+\   
+
+GDELT 2.0 EVENT DATABASE. (2016). Retrieved November 30, 2020, from https://blog.gdeltproject.org/the-datasets-of-gdelt-as-of-february-2016/
